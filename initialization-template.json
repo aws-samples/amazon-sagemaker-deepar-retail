@@ -3,11 +3,11 @@
   "Parameters": {
     "SourceCodeZip": {
       "Type": "String",
-      "Default": "https://codeload.github.com/paulfryer/retail-deepar/zip/master"
+      "Default": "https://codeload.github.com/aws-samples/amazon-sagemaker-deepar-retail/zip/master"
     },
     "SourceCodeDirectory": {
       "Type": "String",
-      "Default": "retail-deepar-master"
+      "Default": "amazon-sagemaker-deepar-retail-master"
     }
   },
   "Resources": {
