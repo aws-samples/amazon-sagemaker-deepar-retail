@@ -50,5 +50,4 @@ If you want to retrain on data as it's dropped into S3, you can build a trigger 
 
 ## Walkthorugh of code from re:Invnet 2018
 
-[[![RET206 Talk](./documentation/RET206-REINVENT-2018.png)]
-(https://www.youtube.com/watch?v=0B9H9weE3FM&t=36m46s)
+[![RET206 Talk](./documentation/S3Trigger.png)](https://www.youtube.com/watch?v=0B9H9weE3FM&t=36m46s "RET206 Talk")
