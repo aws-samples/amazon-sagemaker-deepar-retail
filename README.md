@@ -47,3 +47,8 @@ https://raw.githubusercontent.com/aws-samples/amazon-sagemaker-deepar-retail/mas
 If you want to retrain on data as it's dropped into S3, you can build a trigger that kicks off the **Retrain** Step Function every time new data is placed in S3.
 
 ![S3 Trigger](./documentation/S3Trigger.png)
+
+## Walkthorugh of code from re:Invnet 2018
+
+[![RET206 Talk](./documentation/RET206-REINVENT-2018.png)
+(https://www.youtube.com/watch?v=0B9H9weE3FM&t=36m46s)
