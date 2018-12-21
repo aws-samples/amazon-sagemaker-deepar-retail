@@ -1,0 +1,40 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2027
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Program", "Program\Program.csproj", "{CF7C82F0-E63C-4993-8CB2-53C8D1C7B028}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{322BE5DE-A239-420F-949C-1E7D8DA46514}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		base-resources.json = base-resources.json
+		buildspec.yml = buildspec.yml
+		public\index.html = public\index.html
+		initialization-template.json = initialization-template.json
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{6984BF74-A32D-4529-8CC1-5C641D4EEED9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CF7C82F0-E63C-4993-8CB2-53C8D1C7B028}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF7C82F0-E63C-4993-8CB2-53C8D1C7B028}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF7C82F0-E63C-4993-8CB2-53C8D1C7B028}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF7C82F0-E63C-4993-8CB2-53C8D1C7B028}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6984BF74-A32D-4529-8CC1-5C641D4EEED9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6984BF74-A32D-4529-8CC1-5C641D4EEED9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6984BF74-A32D-4529-8CC1-5C641D4EEED9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6984BF74-A32D-4529-8CC1-5C641D4EEED9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {272FAF15-3F05-4329-90E3-4045693AE738}
+	EndGlobalSection
+EndGlobal

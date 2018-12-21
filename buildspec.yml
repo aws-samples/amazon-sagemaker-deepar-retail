@@ -1,0 +1,15 @@
+version: 0.1
+phases:
+  build:
+    commands:
+      - dotnet build Program
+      - dotnet publish -c release Program
+  post_build:
+    commands:
+      - dotnet new console --name Builder
+      - sed -i 's/Console.WriteLine("Hello World!")/DotStep.Builder.DotStepBuilder.BuildTemplate(args[0])/g' Builder/Program.cs
+      - cd Builder && dotnet add package DotStep.Builder && dotnet add package DotStep.Common && dotnet add package DotStep.Core && dotnet build && dotnet bin/Debug/netcoreapp2.1/Builder.dll ../Program/bin/Debug/netcoreapp2.1/
+artifacts:
+  files:
+    - Program/bin/release/netcoreapp2.1/publish/**/*
+  discard-paths: yes

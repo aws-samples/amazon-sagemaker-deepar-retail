@@ -1,0 +1,282 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Retail DeepAR",
+  "Mappings": {
+    "DeepArContainerMapping": {
+      "eu-west-1": { "AMI": "224300973850.dkr.ecr.eu-west-1.amazonaws.com/forecasting-deepar:latest" },
+      "us-east-1": { "AMI": "522234722520.dkr.ecr.us-east-1.amazonaws.com/forecasting-deepar:latest" },
+      "us-west-2": { "AMI": "156387875391.dkr.ecr.us-west-2.amazonaws.com/forecasting-deepar:latest" }
+    }
+  },
+  "Resources": {
+    "IdentityPool": {
+      "Type": "AWS::Cognito::IdentityPool",
+      "Properties": {
+        "IdentityPoolName": "SalesForecast",
+        "AllowUnauthenticatedIdentities": true
+      }
+    },
+    "IdentityPoolRoleAttachment": {
+      "Type": "AWS::Cognito::IdentityPoolRoleAttachment",
+      "Properties": {
+        "IdentityPoolId": { "Ref": "IdentityPool" },
+        "Roles": {
+          "unauthenticated": { "Fn::GetAtt": [ "AnonymousUserRole", "Arn" ] }
+        }
+      }
+    },
+    "SageMakerTrainingContainer": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/SalesForecast/SageMakerTrainingContainer",
+        "Type": "String",
+        "Value": {
+          "Fn::FindInMap": [
+            "DeepArContainerMapping",
+            { "Ref": "AWS::Region" },
+            "AMI"
+          ]
+        },
+        "Description": "The training container used to train data in SageMaker."
+      }
+    },
+    "BucketNameParameter": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/SalesForecast/BucketName",
+        "Type": "String",
+        "Value": { "Fn::Sub": "${s3bucket}" },
+        "Description": "The bucket name used for the Sales Forecast project."
+      }
+    },
+    "SageMakerRoleParameter": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/SalesForecast/SageMakerRole",
+        "Type": "String",
+        "Value": {
+          "Fn::GetAtt": [
+            "SageMakerRole",
+            "Arn"
+          ]
+        },
+        "Description": "The IAM Role ARN used to interact with the Sagemaker service."
+      }
+    },
+    "s3bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": { "Fn::Sub": "${AWS::Region}-${AWS::StackName}-${AWS::AccountId}" },
+        "CorsConfiguration": {
+          "CorsRules": [
+            {
+              "AllowedMethods": [ "GET", "POST", "PUT" ],
+              "AllowedOrigins": [ "*" ],
+              "AllowedHeaders": [ "*" ]
+            }
+          ]
+        }
+      }
+    },
+    "SalesForecastLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": "SalesForecastLambda",
+        "Code": {
+          "ZipFile": {
+            "Fn::Join": [
+              "\n",
+              [
+                "var aws = require('aws-sdk');",
+                "var sageMakerRuntime = new aws.SageMakerRuntime();",
+                "var s3 = new aws.S3();",
+                "var ssm = new aws.SSM();",
+                "exports.handler = async (event, context, callback) => {",
+                "if (event.Function == 'GetBucket')",
+                "{",
+                "var paramResult = await ssm.getParameter({Name: '/SalesForecast/BucketName'}).promise();",
+                "return paramResult.Parameter.Value;",
+                "}",
+                "if (event.Function == 'GetForecast')",
+                "{",
+                "var store = event.Store;",
+                "var item = event.Item;",
+                "var s = 1;",
+                "var category = 1;",
+                "while(s <= store)",
+                "{",
+                "var i =1;",
+                "while(i <= item)",
+                "{",
+                "category++;",
+                "i++;",
+                "}",
+                "s++;",
+                "}",
+                "category = category -2;",
+                "var req = {",
+                "instances: [",
+                "{",
+                "start: '2018-01-01 00:00:00',",
+                "cat: [category],",
+                "target: []",
+                "}",
+                "]",
+                "};",
+                "var params = {",
+                "Body: JSON.stringify(req),",
+                "EndpointName: 'SalesForecast',",
+                "ContentType: 'application/json',",
+                "};",
+                "var resp = await sageMakerRuntime.invokeEndpoint(params).promise();",
+                "var obj = JSON.parse(resp.Body);",
+                "return obj.predictions[0];",
+                "}",
+                "};"
+              ]
+            ]
+          }
+        },
+        "MemorySize": 128,
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "SalesForecastLambdaRole",
+            "Arn"
+          ]
+        },
+        "Timeout": 300,
+        "Runtime": "nodejs8.10"
+      }
+    },
+    "SalesForecastLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "CanGetParameters",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ssm:Describe*",
+                    "ssm:Get*",
+                    "ssm:List*"
+                  ],
+                  "Resource": { "Fn::Sub": "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${BucketNameParameter}" }
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "CanExecuteSalesForecastSageMakerEndpoint",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "sagemaker:InvokeEndpoint",
+                  "Resource": { "Fn::Sub": "arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:endpoint/salesforecast" }
+                }
+              ]
+            }
+          }
+        ],
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "AnonymousUserRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "Policies": [
+          {
+            "PolicyName": "CanAccessTrainingData",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "s3:*",
+                  "Resource": { "Fn::Sub": "arn:aws:s3:::${s3bucket}/SageMaker/train.csv" }
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "CanExecuteSalesForecastLambda",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "lambda:InvokeFunction",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "SalesForecastLambda",
+                      "Arn"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Federated": "cognito-identity.amazonaws.com"
+              },
+              "Action": "sts:AssumeRoleWithWebIdentity",
+              "Condition": {
+                "StringEquals": {
+                  "cognito-identity.amazonaws.com:aud": { "Ref": "IdentityPool" }
+                },
+                "ForAnyValue:StringLike": {
+                  "cognito-identity.amazonaws.com:amr": "unauthenticated"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "SageMakerRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess" ],
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sagemaker.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

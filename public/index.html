@@ -1,0 +1,254 @@
+<html>
+<head>
+    <script type="text/javascript" src="https://sdk.amazonaws.com/builder/js/cache/2.325.0/build/aws-sdk-2.325.0.min.js"></script>
+    
+
+    <script type="text/javascript">
+        var bucket = "";
+
+        function saveIdentityPoolId()
+        {
+            var identityPoolId = document.getElementById("identityPoolId").value;
+            var region = identityPoolId.split(':')[0];
+            localStorage.setItem("Region", region);
+            localStorage.setItem("IdentityPoolId", identityPoolId);
+            onPageLoad();
+        }
+        function startSession(identityId)
+        {
+            AWS.config.region = localStorage.getItem("Region");
+            var cognitoidentity = new AWS.CognitoIdentity();
+
+            cognitoidentity.getCredentialsForIdentity({ IdentityId: identityId }, function (e2, d2) {
+                AWS.config.update({
+                    credentials: {
+                        accessKeyId: d2.Credentials.AccessKeyId,
+                        secretAccessKey: d2.Credentials.SecretKey,
+                        sessionToken: d2.Credentials.SessionToken
+                    }
+                });
+                var lambda = new AWS.Lambda();
+                lambda.invoke({
+                    FunctionName: 'SalesForecastLambda',
+                    Payload: JSON.stringify({
+                        Function: 'GetBucket'
+                    })
+                }, function (e3, d3) {
+                    bucket = d3.Payload.replace(/"/g, '');
+                });
+            });
+        }
+        function onPageLoad() {
+            var identityPoolId = localStorage.getItem("IdentityPoolId");
+            var identityId = localStorage.getItem("IdentityId");
+
+            AWS.config.region = localStorage.getItem("Region");
+            var cognitoidentity = new AWS.CognitoIdentity();
+
+            document.getElementById("identityPoolId").value = identityPoolId;
+            
+            if (!identityId) {
+                cognitoidentity.getId({ IdentityPoolId: identityPoolId }, function (e1, d1) {
+                    identityId = d1.IdentityId;
+                    localStorage.setItem("IdentityId", identityId);
+                    startSession(identityId);
+                });
+            } else startSession(identityId);
+        }
+        function getSelectedValue(controlName) {
+            var e = document.getElementById(controlName);
+            var value = e.options[e.selectedIndex].value;
+            return value;
+        }
+
+        function loadHistory() {
+            
+            document.getElementById("demand").innerHTML = "";
+            document.getElementById("date").innerHTML = "";
+
+            var store = getSelectedValue("store");
+            var item = getSelectedValue("item");  
+            
+            var s3 = new AWS.S3();
+            var params = {
+                Bucket: bucket, /* required */
+                Expression: "select s.\"date\", s.demand from s3object s where s.store = '" + store + "' and s.item = '" + item + "' and s.\"date\" >= '2017-10-01'", /* required */
+                ExpressionType: 'SQL', /* required */
+                InputSerialization: { /* required */
+                    CSV: {
+                        FileHeaderInfo: 'USE',
+                        FieldDelimiter: ','
+                    },
+                },
+                Key: 'SageMaker/train.csv', /* required */
+                OutputSerialization: { /* required */
+                    JSON: {
+                    }
+                }
+            }
+            s3.selectObjectContent(params, function (err, data) {
+                var events = data.Payload;
+                for (var event of events) {
+                    if (event.Records) {
+                        var jsonLines = new TextDecoder("utf-8").decode(event.Records.Payload);
+                        buildTable(jsonLines, "blue");
+                    }
+                }
+                
+            });
+        }
+        function buildTable(jsonLines, color) {            
+            var rows = jsonLines.split('\n');
+            rows.forEach(function (row) {
+                if (row.length > 0) {
+                    var record = JSON.parse(row);
+                    document.getElementById("demand").innerHTML =
+                        document.getElementById("demand").innerHTML +
+                        "<td valign='bottom' title='" + record.demand + "'><table width='100%'><tr><td height='" + record.demand + "' bgcolor='" + color + "'></td></tr></td>";
+                    document.getElementById("date").innerHTML =
+                        document.getElementById("date").innerHTML +
+                        "<td style='transform: rotate(-90.0deg);'>" + record.date + "</td>";
+                }
+            }); 
+        }
+
+        Date.prototype.addDays = function (days) {
+            var date = new Date(this.valueOf());
+            date.setDate(date.getDate() + days);
+            return date;
+        }
+
+        function loadForecast() {
+            var store = getSelectedValue("store");
+            var item = getSelectedValue("item"); 
+
+            var lambda = new AWS.Lambda();
+            lambda.invoke({
+                FunctionName: 'SalesForecastLambda',
+                Payload: JSON.stringify({
+                    Function: 'GetForecast',
+                    Store: store,
+                    Item: item
+                })
+            }, function (e3, d3) {
+                var jsonLines = "";
+                var date = new Date(2018, 0, 1);
+                JSON.parse(d3.Payload).mean.forEach(function (demand) {                    
+                    var month = date.getUTCMonth() + 1; //months from 1-12
+                    var day = date.getUTCDate();
+                    var year = date.getUTCFullYear();
+                    newdate = year + "-" + month + "-" + day;
+                    jsonLines = jsonLines + JSON.stringify({
+                        demand: demand,
+                        date: newdate
+                    }) + "\n";
+                    date = date.addDays(1);
+                });
+                buildTable(jsonLines, "red");
+            });
+        }
+    </script>
+
+
+</head>
+
+<body onload="onPageLoad();">
+    <h2>Sales Forecast Demo</h2>
+
+    <input type="text" id="identityPoolId" /> <input type="button" onclick="saveIdentityPoolId();" value="Save Identity Pool ID"/>
+
+    <!--
+    <h3>Train New Model</h3>
+    <form action='' method='POST' enctype='multipart/form-data'>
+        <input type='file' name='userFile' />
+        <input type='submit' name='upload_btn' value='upload' />
+    </form>
+    -->
+    <h3>View History and Forecast</h3>
+    <form>
+
+        Store:
+        <select id="store">
+            <option value='1'>Store 1</option>
+            <option value='2'>Store 2</option>
+            <option value='3'>Store 3</option>
+            <option value='4'>Store 4</option>
+            <option value='5'>Store 5</option>
+            <option value='6'>Store 6</option>
+            <option value='7'>Store 7</option>
+            <option value='8'>Store 8</option>
+            <option value='9'>Store 9</option>
+            <option value='10'>Store 10</option>
+        </select>
+
+        Item:
+        <select id="item">
+            <option value='1'>Item 1</option>
+            <option value='2'>Item 2</option>
+            <option value='3'>Item 3</option>
+            <option value='4'>Item 4</option>
+            <option value='5'>Item 5</option>
+            <option value='6'>Item 6</option>
+            <option value='7'>Item 7</option>
+            <option value='8'>Item 8</option>
+            <option value='9'>Item 9</option>
+            <option value='10'>Item 10</option>
+            <option value='11'>Item 11</option>
+            <option value='12'>Item 12</option>
+            <option value='13'>Item 13</option>
+            <option value='14'>Item 14</option>
+            <option value='15'>Item 15</option>
+            <option value='16'>Item 16</option>
+            <option value='17'>Item 17</option>
+            <option value='18'>Item 18</option>
+            <option value='19'>Item 19</option>
+            <option value='20'>Item 20</option>
+            <option value='21'>Item 21</option>
+            <option value='22'>Item 22</option>
+            <option value='23'>Item 23</option>
+            <option value='24'>Item 24</option>
+            <option value='25'>Item 25</option>
+            <option value='26'>Item 26</option>
+            <option value='27'>Item 27</option>
+            <option value='28'>Item 28</option>
+            <option value='29'>Item 29</option>
+            <option value='30'>Item 30</option>
+            <option value='31'>Item 31</option>
+            <option value='32'>Item 32</option>
+            <option value='33'>Item 33</option>
+            <option value='34'>Item 34</option>
+            <option value='35'>Item 35</option>
+            <option value='36'>Item 36</option>
+            <option value='37'>Item 37</option>
+            <option value='38'>Item 38</option>
+            <option value='39'>Item 39</option>
+            <option value='40'>Item 40</option>
+            <option value='41'>Item 41</option>
+            <option value='42'>Item 42</option>
+            <option value='43'>Item 43</option>
+            <option value='44'>Item 44</option>
+            <option value='45'>Item 45</option>
+            <option value='46'>Item 46</option>
+            <option value='47'>Item 47</option>
+            <option value='48'>Item 48</option>
+            <option value='49'>Item 49</option>
+            <option value='50'>Item 50</option>
+        </select>
+
+
+        <input type="button" value="Load History" onclick="loadHistory();" />
+        <input type="button" value="Load Forecast" onclick="loadForecast();" />
+    </form>
+
+    <table>
+        <tr id="demand">
+
+        </tr>
+        <tr id="date">
+
+        </tr>
+    </table>
+
+</body>
+
+</html>

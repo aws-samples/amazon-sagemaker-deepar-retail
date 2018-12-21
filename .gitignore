@@ -1,0 +1,5 @@
+/.vs
+/Program/bin/Debug/netcoreapp2.1
+/Program/obj
+/Tests/bin/Debug/netcoreapp2.1
+/Tests/obj
