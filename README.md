@@ -2,6 +2,17 @@
 
 Reference project for building a DeepAR forecasting model to predict store sales. This will build a Step Function that will launch a training job on SageMaker then update a prediction endpoint which can be used to forecast future store sales.
 
+
+## License
+
+This library is licensed under the Apache 2.0 License. 
+
+
+## Walkthorugh of code from re:Invnet 2018
+
+[![RET206 Talk](./documentation/RET206-REINVENT-2018.png)](https://www.youtube.com/watch?v=0B9H9weE3FM&t=36m46s "RET206 Talk")
+
+
 ![Retrain Step Function](./documentation/RetrainStepFunction.png)
 
 After you the model has been built and deployed you can test it with a UI tool included in this project.
@@ -11,10 +22,6 @@ History (blue color) is loaded from S3
 
 Forecasts (red color) are loaded from SageMaker endpoint
 ![Load Forecast](./documentation/LoadForecast.png)
-
-## License
-
-This library is licensed under the Apache 2.0 License. 
 
 ## Installation Instructions
 
@@ -48,6 +55,3 @@ If you want to retrain on data as it's dropped into S3, you can build a trigger 
 
 ![S3 Trigger](./documentation/S3Trigger.png)
 
-## Walkthorugh of code from re:Invnet 2018
-
-[![RET206 Talk](./documentation/RET206-REINVENT-2018.png)](https://www.youtube.com/watch?v=0B9H9weE3FM&t=36m46s "RET206 Talk")
