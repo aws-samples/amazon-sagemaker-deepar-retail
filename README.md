@@ -30,12 +30,12 @@ Once the CloudFormation template has finished it will kick off a CodeBuild proje
 
 ## Building the Retail DeepAR Model
 
-After all 3 CloudFormation templates have run you can kick off the Step Function named **Retrain**. This will look for a file named **SageMaker/train.csv** inside the bucket that was created from the **retail-deepar-base** CloudFormation template. Besure to place that file at that location in that folder. You can download that file here: https://raw.githubusercontent.com/paulfryer/retail-deepar/master/train.csv
+After all 3 CloudFormation templates have run you can kick off the Step Function named **Retrain**. This will look for a file named **SageMaker/train.csv** inside the bucket that was created from the **retail-deepar-base** CloudFormation template. Besure to place that file at that location in that folder. You can download that file here: https://raw.githubusercontent.com/aws-samples/amazon-sagemaker-deepar-retail/master/train.csv
 
 ## Testing the Model
 
 After the **Retrain** Step Function has completed you can test the forecast model you built with this test tool:
-https://raw.githubusercontent.com/paulfryer/retail-deepar/master/public/index.html
+https://raw.githubusercontent.com/aws-samples/amazon-sagemaker-deepar-retail/master/public/index.html
 
 1. Download that file to your desktop, then open it in **Chrome** browser. (only Chrome is tested, so use that). 
 2. Set the **UserPoolId**. You can find that in the **Resources** tab of the **retail-deepar-base** CloudFormation template in the AWS console.
