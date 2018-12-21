@@ -1,13 +1,5 @@
 ## Amazon SageMaker DeepAR Retail Sample
 
-Use SageMaker's DeepAR algorithm to continuously develop store inventory forecasts for in response to changing inventory data.
-
-## License
-
-This library is licensed under the Apache 2.0 License. 
-
-# Retail DeepAR
-
 Reference project for building a DeepAR forecasting model to predict store sales. This will build a Step Function that will launch a training job on SageMaker then update a prediction endpoint which can be used to forecast future store sales.
 
 ![Retrain Step Function](./documentation/RetrainStepFunction.png)
@@ -20,12 +12,15 @@ History (blue color) is loaded from S3
 Forecasts (red color) are loaded from SageMaker endpoint
 ![Load Forecast](./documentation/LoadForecast.png)
 
+## License
+
+This library is licensed under the Apache 2.0 License. 
 
 ## Installation Instructions
 
 Note: Supported regions are Oregon, Virginia, Dublin.
 
-1. Download this CloudFormation template: https://raw.githubusercontent.com/paulfryer/retail-deepar/master/initialization-template.json
+1. Download this CloudFormation template: https://raw.githubusercontent.com/aws-samples/amazon-sagemaker-deepar-retail/master/initialization-template.json
 2. Execute the CloudFormation template, provide a Stack Name of **retail-deepar** - be sure to use lowercase letters.
 
 Once the CloudFormation template has finished it will kick off a CodeBuild project that will clone this repository into a private CodeCommit repository in your account. A CodePipeline was also created which will be triggered when the clone happens. This will build the source code and deploy it with 2 more CloudFormation templates:
