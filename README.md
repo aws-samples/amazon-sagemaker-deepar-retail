@@ -43,7 +43,7 @@ After the **Retrain** Step Function has completed you can test the forecast mode
 https://raw.githubusercontent.com/aws-samples/amazon-sagemaker-deepar-retail/master/public/index.html
 
 1. Download that file to your desktop, then open it in **Chrome** browser. (only Chrome is tested, so use that). 
-2. Set the **UserPoolId**. You can find that in the **Resources** tab of the **retail-deepar-base** CloudFormation template in the AWS console.
+2. Set the **IdentityPool**. You can find that in the **Resources** tab of the **retail-deepar-base** CloudFormation template in the AWS console.
 3. Pick a store and item then load the last 90 days of data by clicking the **Load History** button.
 4. Click the **Load Forecast** button to load the forecast for the next 90 days. It will be appended to the end of the table so you scrole to the right to view.
 
